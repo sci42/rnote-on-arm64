@@ -7,6 +7,7 @@ build_folder := "_mesonbuild"
 flatpak_app_folder := "_flatpak_app"
 flatpak_repo_folder := "_flatpak_repo"
 mingw64_prefix_path := "C:/msys64/mingw64"
+clangarm64_prefix_path := "C:/msys64/clangarm64"
 
 [private]
 linux_distr := `lsb_release -ds | tr '[:upper:]' '[:lower:]'`
@@ -129,6 +130,31 @@ prerequisites-win:
         mingw-w64-x86_64-libadwaita-1.7.7-1-any.pkg.tar.zst
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     export PATH="$HOME/.cargo/bin:$PATH"
+
+# in MSYS2 CLANGARM64 shell (for Windows ARM64 devices like Snapdragon X)
+prerequisites-win-arm64:
+    pacman -S --noconfirm \
+        unzip git mingw-w64-clang-aarch64-xz mingw-w64-clang-aarch64-pkgconf \
+        mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-toolchain \
+        mingw-w64-clang-aarch64-make mingw-w64-clang-aarch64-cmake \
+        mingw-w64-clang-aarch64-meson mingw-w64-clang-aarch64-diffutils \
+        mingw-w64-clang-aarch64-desktop-file-utils \
+        mingw-w64-clang-aarch64-appstream mingw-w64-clang-aarch64-gtk4 \
+        mingw-w64-clang-aarch64-libadwaita mingw-w64-clang-aarch64-angleproject
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+        --default-host aarch64-pc-windows-gnullvm
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+# in CLANGARM64 shell
+setup-win-arm64-installer installer_name="rnote-win-installer-arm64":
+    meson setup \
+        --prefix={{ clangarm64_prefix_path }} \
+        -Dprofile=default \
+        -Dcli=true \
+        -Dwin-installer-name={{ installer_name }} \
+        -Dwin-build-environment-path={{ clangarm64_prefix_path }} \
+        -Dci={{ ci }} \
+        {{ build_folder }}
 
 setup-dev *MESON_ARGS:
     meson setup \

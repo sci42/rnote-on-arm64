@@ -160,8 +160,7 @@ impl PenBehaviour for Brush {
                 engine_view
                     .store
                     .update_geometry_for_stroke(*current_stroke_key);
-                engine_view.store.regenerate_rendering_for_stroke_threaded(
-                    engine_view.tasks_tx.clone(),
+                engine_view.store.regenerate_rendering_for_stroke(
                     *current_stroke_key,
                     engine_view.camera.viewport(),
                     engine_view.camera.image_scale(),
@@ -228,7 +227,6 @@ impl PenBehaviour for Brush {
                             }
 
                             engine_view.store.append_rendering_last_segments(
-                                engine_view.tasks_tx.clone(),
                                 *current_stroke_key,
                                 n_segments,
                                 engine_view.camera.viewport(),
@@ -250,7 +248,6 @@ impl PenBehaviour for Brush {
                             }
 
                             engine_view.store.append_rendering_last_segments(
-                                engine_view.tasks_tx.clone(),
                                 *current_stroke_key,
                                 n_segments,
                                 engine_view.camera.viewport(),
@@ -272,8 +269,7 @@ impl PenBehaviour for Brush {
                         engine_view
                             .store
                             .update_geometry_for_stroke(*current_stroke_key);
-                        engine_view.store.regenerate_rendering_for_stroke_threaded(
-                            engine_view.tasks_tx.clone(),
+                        engine_view.store.regenerate_rendering_for_stroke(
                             *current_stroke_key,
                             engine_view.camera.viewport(),
                             engine_view.camera.image_scale(),

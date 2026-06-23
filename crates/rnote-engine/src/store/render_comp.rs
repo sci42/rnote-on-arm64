@@ -234,6 +234,59 @@ impl StrokeStore {
     }
 
     /// Regenerate the rendering of all keys for the given viewport that need to be rerendered.
+    /// Synchronous version that regenerates rendering for all strokes in the viewport.
+    pub(crate) fn regenerate_rendering_in_viewport(
+        &mut self,
+        force_regenerate: bool,
+        viewport: Aabb,
+        image_scale: f64,
+    ) {
+        let keys = self.render_components.keys().collect::<Vec<StrokeKey>>();
+
+        for key in keys {
+            if let Some(stroke) = self.stroke_components.get(key)
+                && let Some(render_comp) = self.render_components.get_mut(key)
+            {
+                let stroke_bounds = stroke.bounds();
+                let viewport_extended =
+                    viewport.extend_by(viewport.extents() * image::VIEWPORT_EXTENTS_MARGIN_FACTOR);
+
+                if !viewport_extended.intersects(&stroke_bounds) {
+                    #[cfg(feature = "ui")]
+                    {
+                        render_comp.rendernodes = vec![];
+                    }
+                    render_comp.images = vec![];
+                    render_comp.state = RenderCompState::Dirty;
+                    continue;
+                }
+
+                if !force_regenerate {
+                    match render_comp.state {
+                        RenderCompState::Complete | RenderCompState::BusyRenderingInTask => {
+                            continue;
+                        }
+                        RenderCompState::ForViewport(old_viewport) => {
+                            const VIEWPORT_EXTENTS_MARGIN_RERENDER_THRESHOLD: f64 = 0.7;
+                            if old_viewport.contains(
+                                &(viewport.extend_by(
+                                    viewport.extents()
+                                        * image::VIEWPORT_EXTENTS_MARGIN_FACTOR
+                                        * VIEWPORT_EXTENTS_MARGIN_RERENDER_THRESHOLD,
+                                )),
+                            ) {
+                                continue;
+                            }
+                        }
+                        RenderCompState::Dirty => {}
+                    }
+                }
+
+                self.regenerate_rendering_for_stroke(key, viewport, image_scale);
+            }
+        }
+    }
+
     pub(crate) fn regenerate_rendering_in_viewport_threaded(
         &mut self,
         tasks_tx: EngineTaskSender,
@@ -331,7 +384,6 @@ impl StrokeStore {
     /// For other strokes the rendering is regenerated completely.
     pub(crate) fn append_rendering_last_segments(
         &mut self,
-        tasks_tx: EngineTaskSender,
         key: StrokeKey,
         n_last_segments: usize,
         viewport: Aabb,
@@ -377,12 +429,7 @@ impl StrokeStore {
                 | Stroke::TextStroke(_)
                 | Stroke::VectorImage(_)
                 | Stroke::BitmapImage(_) => {
-                    self.regenerate_rendering_for_stroke_threaded(
-                        tasks_tx,
-                        key,
-                        viewport,
-                        image_scale,
-                    );
+                    self.regenerate_rendering_for_stroke(key, viewport, image_scale);
                 }
             }
         }

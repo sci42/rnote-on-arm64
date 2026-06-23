@@ -5,6 +5,7 @@ use p2d::bounding_volume::Aabb;
 use p2d::math::Vector2;
 use piet::RenderContext;
 use rnote_compose::color;
+use rnote_compose::ext::DAffine2Ext;
 use tracing::error;
 
 impl Engine {
@@ -91,8 +92,7 @@ impl Engine {
     /// Update the content rendering for the current viewport.
     pub fn update_content_rendering_current_viewport(&mut self) -> WidgetFlags {
         let mut widget_flags = WidgetFlags::default();
-        self.store.regenerate_rendering_in_viewport_threaded(
-            self.engine_tasks_tx(),
+        self.store.regenerate_rendering_in_viewport(
             false,
             self.camera.viewport(),
             self.camera.image_scale(),
@@ -178,20 +178,23 @@ impl Engine {
         self.draw_background_to_gtk_snapshot(snapshot)?;
         self.draw_format_borders_to_gtk_snapshot(snapshot)?;
         self.draw_origin_indicator_to_gtk_snapshot(snapshot)?;
-        self.store
-            .draw_strokes_to_gtk_snapshot(snapshot, doc_bounds, viewport);
         snapshot.restore();
-        /*
-               let cairo_cx = snapshot.append_cairo(&graphene::Rect::from_p2d_aabb(surface_bounds));
-               let mut piet_cx = piet_cairo::CairoRenderContext::new(&cairo_cx);
-               piet_cx.transform(self.camera.transform().to_kurbo());
-               self.store.draw_strokes_immediate(
-                   &mut piet_cx,
-                   doc_bounds,
-                   viewport,
-                   self.camera.image_scale(),
-               );
-        */
+
+        {
+            use crate::ext::GrapheneRectExt;
+            use gtk4::graphene;
+            let cairo_cx =
+                snapshot.append_cairo(&graphene::Rect::from_p2d_aabb(surface_bounds));
+            let mut piet_cx = piet_cairo::CairoRenderContext::new(&cairo_cx);
+            piet_cx.transform(self.camera.transform().to_kurbo());
+            self.store.draw_strokes_immediate(
+                &mut piet_cx,
+                doc_bounds,
+                viewport,
+                self.camera.image_scale(),
+            );
+            let _ = piet_cx.finish();
+        }
         self.penholder
             .draw_on_doc_to_gtk_snapshot(snapshot, &engine_view!(self))?;
 

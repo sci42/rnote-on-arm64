@@ -59,8 +59,7 @@ impl Selector {
                 widget_flags |= engine_view
                     .document
                     .expand_autoexpand(engine_view.camera, engine_view.store);
-                engine_view.store.regenerate_rendering_in_viewport_threaded(
-                    engine_view.tasks_tx.clone(),
+                engine_view.store.regenerate_rendering_in_viewport(
                     false,
                     engine_view.camera.viewport(),
                     engine_view.camera.image_scale(),
@@ -245,8 +244,7 @@ impl Selector {
                         widget_flags |= engine_view
                             .document
                             .expand_autoexpand(engine_view.camera, engine_view.store);
-                        engine_view.store.regenerate_rendering_in_viewport_threaded(
-                            engine_view.tasks_tx.clone(),
+                        engine_view.store.regenerate_rendering_in_viewport(
                             false,
                             engine_view.camera.viewport(),
                             engine_view.camera.image_scale(),
@@ -505,8 +503,7 @@ impl Selector {
                         widget_flags |= engine_view
                             .document
                             .resize_autoexpand(engine_view.store, engine_view.camera);
-                        engine_view.store.regenerate_rendering_in_viewport_threaded(
-                            engine_view.tasks_tx.clone(),
+                        engine_view.store.regenerate_rendering_in_viewport(
                             false,
                             engine_view.camera.viewport(),
                             engine_view.camera.image_scale(),
@@ -655,8 +652,7 @@ impl Selector {
                         if modifier_keys.contains(&ModifierKey::KeyboardCtrl) {
                             let duplicated = engine_view.store.duplicate_selection();
                             engine_view.store.update_geometry_for_strokes(&duplicated);
-                            engine_view.store.regenerate_rendering_for_strokes_threaded(
-                                engine_view.tasks_tx.clone(),
+                            engine_view.store.regenerate_rendering_for_strokes(
                                 &duplicated,
                                 engine_view.camera.viewport(),
                                 engine_view.camera.image_scale(),

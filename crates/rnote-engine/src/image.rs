@@ -352,10 +352,22 @@ impl Image {
             draw_func(&cairo_cx)?;
         }
 
-        let data = image_surface
+        let stride = image_surface.stride() as usize;
+        let mut data = image_surface
             .data()
             .map_err(|e| anyhow::anyhow!("accessing image surface data failed, Err: {e:?}"))?
             .to_vec();
+
+        let width_bytes = (width_scaled as usize) * 4;
+        if stride != width_bytes {
+            let mut packed_data = Vec::with_capacity(width_bytes * (height_scaled as usize));
+            for row in data.chunks(stride) {
+                if row.len() >= width_bytes {
+                    packed_data.extend_from_slice(&row[..width_bytes]);
+                }
+            }
+            data = packed_data;
+        }
 
         Ok(Image {
             data: glib::Bytes::from_owned(convert_image_bgra_to_rgba(
