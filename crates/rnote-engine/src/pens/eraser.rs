@@ -246,7 +246,8 @@ fn erase(element: Element, engine_view: &mut EngineViewMut) -> WidgetFlags {
             );
             widget_flags |= wf;
 
-            engine_view.store.regenerate_rendering_for_strokes(
+            engine_view.store.regenerate_rendering_for_strokes_threaded(
+                engine_view.tasks_tx.clone(),
                 &modified_strokes,
                 engine_view.camera.viewport(),
                 engine_view.camera.image_scale(),
