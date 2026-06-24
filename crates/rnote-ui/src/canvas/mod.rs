@@ -224,32 +224,8 @@ mod imp {
             obj.add_controller(self.key_controller.clone());
             obj.add_controller(self.drop_target.clone());
 
-            // receive and handle engine tasks
-            let engine_task_handler_handle = glib::spawn_future_local(clone!(
-                #[weak(rename_to=canvas)]
-                obj,
-                async move {
-                    let Some(mut task_rx) = canvas.engine_mut().take_engine_tasks_rx() else {
-                        error!(
-                            "Installing the engine task handler failed, taken tasks_rx is None."
-                        );
-                        return;
-                    };
-
-                    loop {
-                        if let Some(task) = task_rx.recv().await {
-                            let (widget_flags, quit) = canvas.engine_mut().handle_engine_task(task);
-                            canvas.emit_handle_widget_flags(widget_flags);
-
-                            if quit {
-                                break;
-                            }
-                        }
-                    }
-                }
-            ));
-
-            *self.engine_task_handler_handle.borrow_mut() = Some(engine_task_handler_handle);
+            // On ARM64/Windows, the futures channel does not properly wake the glib
+            // mainloop. Instead of the async handler, we poll tasks in the tick callback below.
 
             let animation_callback_id = obj.add_tick_callback(clone!(
                 #[weak(rename_to=canvas)]
@@ -257,6 +233,13 @@ mod imp {
                 #[upgrade_or]
                 glib::ControlFlow::Break,
                 move |_widget, _frame_clock| {
+                    // Poll pending engine tasks (threaded rendering results)
+                    let tasks = canvas.engine_mut().poll_engine_tasks();
+                    for task in tasks {
+                        let (widget_flags, _quit) = canvas.engine_mut().handle_engine_task(task);
+                        canvas.emit_handle_widget_flags(widget_flags);
+                    }
+
                     if canvas.engine_mut().animation.process_frame() {
                         let optimize_epd = canvas.engine_ref().optimize_epd();
                         canvas.engine_mut().handle_animation_frame();

@@ -92,7 +92,8 @@ impl Engine {
     /// Update the content rendering for the current viewport.
     pub fn update_content_rendering_current_viewport(&mut self) -> WidgetFlags {
         let mut widget_flags = WidgetFlags::default();
-        self.store.regenerate_rendering_in_viewport(
+        self.store.regenerate_rendering_in_viewport_threaded(
+            self.engine_tasks_tx(),
             false,
             self.camera.viewport(),
             self.camera.image_scale(),

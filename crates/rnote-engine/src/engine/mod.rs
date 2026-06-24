@@ -175,6 +175,10 @@ impl EngineTaskReceiver {
     pub fn recv(&mut self) -> futures::stream::Next<'_, UnboundedReceiver<EngineTask>> {
         self.0.next()
     }
+
+    pub fn try_recv(&mut self) -> Option<EngineTask> {
+        self.0.try_next().ok().flatten()
+    }
 }
 
 /// The engine.
@@ -272,6 +276,17 @@ impl Engine {
 
     pub fn take_engine_tasks_rx(&mut self) -> Option<EngineTaskReceiver> {
         self.tasks_rx.take()
+    }
+
+    /// Poll all pending engine tasks without blocking, returning them.
+    pub fn poll_engine_tasks(&mut self) -> Vec<EngineTask> {
+        let mut tasks = Vec::new();
+        if let Some(ref mut rx) = self.tasks_rx {
+            while let Some(task) = rx.try_recv() {
+                tasks.push(task);
+            }
+        }
+        tasks
     }
 
     /// Whether pen sounds are enabled.
