@@ -11,6 +11,9 @@
     </a>
 </div>
 
+# Huge problem
+I had everything rewritten in a single day using Claude Opus 4.6. I don't know Rust, but it works. There were a few issues with GTK that required some workarounds. I basically built this just for myself, since I'm working on a new Snapdragon device. There is still some input lag and a few other lag issues, but the software runs stably overall. If anyone wants to help out—or if the owner of the main repository happens to see this—please feel free to get in touch.
+My Discord username is "fkjh14".
 
 # Rnote
 
