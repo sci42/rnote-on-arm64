@@ -290,22 +290,21 @@ impl Image {
     pub fn to_rendernode(&self) -> Result<gtk4::gsk::RenderNode, anyhow::Error> {
         use crate::ext::GrapheneRectExt;
         use gtk4::{graphene, gsk, prelude::*};
+        use rnote_compose::shapes::Shapeable;
 
         self.assert_valid()?;
 
         let memtexture = self.to_memtexture()?;
+        // Use the global AABB bounds directly instead of local_aabb + TransformNode.
+        // TransformNode with matrix transforms causes magenta artifacts on ARM64/Windows GTK4.
+        let bounds = self.rectangle.bounds();
         let texture_node = gsk::TextureNode::new(
             &memtexture,
-            &graphene::Rect::from_p2d_aabb(self.rectangle.cuboid.local_aabb()),
-        )
-        .upcast();
-        let transform_node = gsk::TransformNode::new(
-            &texture_node,
-            &crate::utils::affine_to_gsk(&self.rectangle.affine),
+            &graphene::Rect::from_p2d_aabb(bounds),
         )
         .upcast();
 
-        Ok(transform_node)
+        Ok(texture_node)
     }
 
     #[cfg(feature = "ui")]
